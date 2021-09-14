@@ -23,7 +23,7 @@ module "vpc" {
 
   enable_ipv6 = false
 
-  enable_nat_gateway = false
+  enable_nat_gateway = true
   single_nat_gateway = true
 
   public_subnet_tags = {
