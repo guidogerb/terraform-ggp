@@ -1,2 +1,2 @@
-# terraform-bpm
-Terraform Bluepants Media, LLC
+# terraform-ggp
+Terraform GuidoGerb Publishing, LLC
