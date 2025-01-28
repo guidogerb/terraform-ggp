@@ -1,7 +1,32 @@
+# terraform-ggp/variables.tf
+
+variable "common_tags" {
+  description = "Common tags to be attached to all resources"
+  type        = map(string)
+  default     = {
+    Owner        = "471112830678"
+    CreatedBy    = "Gary Gerber"
+    Project      = "GuidoGerb Publishing"
+    Environment  = "production"
+    GeneratedBy  = "Terraform"
+  }
+}
+
+variable "prepend-name" {
+  description = "Prepend name for infrastructure"
+  type        = string
+  default     = "GGP-"
+}
+
+variable "default-region" {
+  description = "Default region"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "zones" {
   type = map
   default = {
-    "ohio" = "us-east-2"
     "virginia"    = "us-east-1"
   }
 }
