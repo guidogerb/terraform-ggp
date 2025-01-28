@@ -1,7 +1,7 @@
 provider "aws" {
-  region                  = var.default-region
-  shared_credentials_file = "~/.aws/credentials"
-  profile                 = "471112830678_GuidGerbAdmins"
+  region                   = var.default-region
+  shared_credentials_files = ["~/.aws/credentials", "~/.aws/config"]
+  profile                  = "471112830678_GuidGerbAdmins"
 }
 
 module "vpc" {

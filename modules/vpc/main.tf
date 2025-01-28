@@ -9,7 +9,6 @@ locals {
 
 resource "aws_vpc" "main" {
   cidr_block  = local.cidr_blocks.vpc
-  enable_ipv6 = false
 
   tags = merge(local.tags, {
     Name = "${var.prepend-name}-main-vpc-${var.default-region}"
@@ -20,7 +19,7 @@ resource "aws_subnet" "public-subnet" {
   count             = length(local.cidr_blocks.public_subnets)
   vpc_id            = aws_vpc.main.id
   cidr_block        = local.cidr_blocks.public_subnets[count.index]
-  availability_zone = var.azs[count.index % length(var.azs)]
+  availability_zone = local.azs[count.index % length(local.azs)]
 
   tags = merge(local.tags, {
     Name = "${var.prepend-name}-public-subnet-${count.index + 1}"
@@ -31,7 +30,7 @@ resource "aws_subnet" "private-subnet" {
   count             = length(local.cidr_blocks.private_subnets)
   vpc_id            = aws_vpc.main.id
   cidr_block        = local.cidr_blocks.private_subnets[count.index]
-  availability_zone = var.azs[count.index % length(var.azs)]
+  availability_zone = local.azs[count.index % length(local.azs)]
 
   tags = merge(local.tags, {
     Name = "${var.prepend-name}-private-subnet-${count.index + 1}"
@@ -42,25 +41,10 @@ resource "aws_subnet" "database-subnet" {
   count             = length(local.cidr_blocks.database_subnets)
   vpc_id            = aws_vpc.main.id
   cidr_block        = local.cidr_blocks.database_subnets[count.index]
-  availability_zone = var.azs[count.index % length(var.azs)]
+  availability_zone = local.azs[count.index % length(local.azs)]
 
   tags = merge(local.tags, {
     Name = "${var.prepend-name}-databases-subnet-${count.index + 1}"
-  })
-}
-resource "aws_eip" "eip" {
-  vpc = true
-
-  tags = merge(local.tags, {
-    Name = "${var.prepend-name}-eip"
-  })
-}
-resource "aws_nat_gateway" "nat-gateway" {
-  allocation_id = aws_eip.eip.id
-  subnet_id     = aws_subnet.public-subnet.id
-
-  tags = merge(local.tags, {
-    Name = "${var.prepend-name}-nat-gateway"
   })
 }
 
@@ -200,12 +184,9 @@ resource "aws_iam_role_policy" "flow-log-policy" {
 }
 EOF
 
-  tags = merge(local.tags, {
-    Name = "${var.prepend-name}-flow-log-policy"
-  })
 }
 
-resource "aws_vpc_flow_log" "vpc_flow_log" {
+resource "aws_flow_log" "flow_log" {
   iam_role_arn        = aws_iam_role.flow-log-role.arn
   log_destination     = aws_cloudwatch_log_group.cloudwatch-log-group.arn
   log_destination_type = "cloud-watch-logs"
