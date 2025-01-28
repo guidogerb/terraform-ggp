@@ -7,9 +7,10 @@ provider "aws" {
 module "vpc" {
   source = "./modules/vpc"
 
-  prepend-name = var.prepend-name
+  prepend-name   = var.prepend-name
   default-region = var.default-region
-  common_tags = var.common_tags
+  common_tags    = var.common_tags
+  default-azs    = var.default-azs
 }
 
 /*

@@ -10,6 +10,11 @@ variable "default-region" {
   type        = string
 }
 
+variable "default-azs" {
+  description = "The Availability Zones"
+  type        = list(string)
+}
+
 variable "common_tags" {
   description = "Tags from parent module"
   type        = map(string)
@@ -20,11 +25,7 @@ locals {
     Module = "vpc"
   }
   tags = merge(var.common_tags, local.local_tags)
-}
-
-variable "azs" {
-  type    = list(string)
-  default = [format(var.default-region,"%sa"), format(var.default-region, "%sb"), format(var.default-region, "%sc")]
+  azs = [for az in var.default-azs : format("%s%s", var.default-region, az)]
 }
 
 

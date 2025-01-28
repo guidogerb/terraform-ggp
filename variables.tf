@@ -3,12 +3,12 @@
 variable "common_tags" {
   description = "Common tags to be attached to all resources"
   type        = map(string)
-  default     = {
-    Owner        = "471112830678"
-    CreatedBy    = "Gary Gerber"
-    Project      = "GuidoGerb Publishing"
-    Environment  = "production"
-    GeneratedBy  = "Terraform"
+  default = {
+    Owner       = "471112830678"
+    CreatedBy   = "Gary Gerber"
+    Project     = "GuidoGerb Publishing"
+    Environment = "production"
+    GeneratedBy = "Terraform"
   }
 }
 
@@ -24,15 +24,14 @@ variable "default-region" {
   default     = "us-east-1"
 }
 
-variable "zones" {
-  type = map
-  default = {
-    "virginia"    = "us-east-1"
-  }
+variable "default-azs" {
+  description = "The Availability Zones"
+  type        = list(string)
+  default     = ["a", "b", "c"]
 }
 
 variable "plans" {
-  type = map
+  type = map(any)
   default = {
     "5USD"  = "1xCPU-1GB"
     "10USD" = "1xCPU-2GB"
@@ -41,7 +40,7 @@ variable "plans" {
 }
 
 variable "storage_sizes" {
-  type = map
+  type = map(any)
   default = {
     "1xCPU-1GB" = "25"
     "1xCPU-2GB" = "50"
@@ -49,7 +48,7 @@ variable "storage_sizes" {
   }
 }
 variable "templates" {
-  type = map
+  type = map(any)
   default = {
     "ubuntu18" = "01000000-0000-4000-8000-000030080200"
     "centos7"  = "01000000-0000-4000-8000-000050010300"
@@ -58,21 +57,21 @@ variable "templates" {
 }
 
 variable "set_password" {
-  type = bool
+  type    = bool
   default = false
 }
 
 variable "users" {
-  type = list
+  type    = list(any)
   default = ["root", "user1", "user2"]
 }
 
 variable "plan" {
-  type = string
+  type    = string
   default = "10USD"
 }
 
 variable "template" {
-  type = string
+  type    = string
   default = "ubuntu18"
 }
