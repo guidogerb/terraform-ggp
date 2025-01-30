@@ -1,9 +1,9 @@
 locals {
   cidr_blocks = {
     vpc = "10.0.0.0/16"
-    public_subnets = ["10.0.0.0/19", "10.0.32.0/19", "10.0.64.0/19"]
-    private_subnets = ["10.0.96.0/19", "10.0.128.0/19", "10.0.160.0/19"]
-    database_subnets = ["10.0.192.0/19", "10.0.224.0/19", "10.0.64.0/20"]
+    public_subnets = ["10.0.0.0/19", "10.0.32.0/19", "10.0.64.0/20"]
+    private_subnets = ["10.0.80.0/20", "10.0.96.0/19", "10.0.128.0/19"]
+    database_subnets = ["10.0.160.0/20", "10.0.176.0/20", "10.0.192.0/19"]
   }
 }
 
@@ -11,7 +11,7 @@ resource "aws_vpc" "main" {
   cidr_block  = local.cidr_blocks.vpc
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-main-vpc-${var.default-region}"
+    Name = "${var.prepend-name}main-vpc"
   })
 }
 
@@ -22,7 +22,7 @@ resource "aws_subnet" "public-subnet" {
   availability_zone = local.azs[count.index % length(local.azs)]
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-public-subnet-${count.index + 1}"
+    Name = "${var.prepend-name}public-subnet-${count.index + 1}"
   })
 }
 
@@ -33,7 +33,7 @@ resource "aws_subnet" "private-subnet" {
   availability_zone = local.azs[count.index % length(local.azs)]
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-private-subnet-${count.index + 1}"
+    Name = "${var.prepend-name}private-subnet-${count.index + 1}"
   })
 }
 
@@ -44,7 +44,7 @@ resource "aws_subnet" "database-subnet" {
   availability_zone = local.azs[count.index % length(local.azs)]
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-databases-subnet-${count.index + 1}"
+    Name = "${var.prepend-name}databases-subnet-${count.index + 1}"
   })
 }
 
@@ -52,7 +52,7 @@ resource "aws_internet_gateway" "internet-gateway" {
   vpc_id = aws_vpc.main.id
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-internet-gateway"
+    Name = "${var.prepend-name}internet-gateway"
   })
 }
 
@@ -60,7 +60,7 @@ resource "aws_route_table" "route-table-public" {
   vpc_id = aws_vpc.main.id
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-route-table-public"
+    Name = "${var.prepend-name}route-table-public"
   })
 }
 
@@ -75,7 +75,7 @@ resource "aws_default_security_group" "default-security-group" {
   }
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-default-security-group"
+    Name = "${var.prepend-name}default-security-group"
   })
 }
 
@@ -92,15 +92,15 @@ resource "aws_security_group" "allow_ssh_private_subnets" {
   }
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-allow-ssh-private-subnets-${count.index}"
+    Name = "${var.prepend-name}allow-ssh-private-subnets-${count.index}"
   })
 }
 
 resource "aws_s3_bucket" "s3-bucket-vpc-logs" {
-  bucket = "${var.prepend-name}-vpc-logs"
+  bucket = lower("${var.prepend-name}vpc-logs")
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-vpc-logs"
+    Name = "${var.prepend-name}vpc-logs"
   })
 }
 
@@ -129,16 +129,16 @@ resource "aws_s3_bucket_policy" "s3_bucket_policy_vpc_logs" {
 }
 
 resource "aws_cloudwatch_log_group" "cloudwatch-log-group" {
-  name = "${var.prepend-name}-flow-logs-group"
+  name = "${var.prepend-name}flow-logs-group"
   retention_in_days = 60 // Retain logs for 60 days
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-flow-logs-group"
+    Name = "${var.prepend-name}flow-logs-group"
   })
 }
 
 resource "aws_iam_role" "flow-log-role" {
-  name = "${var.prepend-name}-flow-log-role"
+  name = "${var.prepend-name}flow-log-role"
 
   assume_role_policy = <<EOF
 {
@@ -157,12 +157,12 @@ resource "aws_iam_role" "flow-log-role" {
 EOF
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-flow-log-role"
+    Name = "${var.prepend-name}flow-log-role"
   })
 }
 
 resource "aws_iam_role_policy" "flow-log-policy" {
-  name = "${var.prepend-name}-flow-log-policy"
+  name = "${var.prepend-name}flow-log-policy"
   role = aws_iam_role.flow-log-role.id
 
   policy = <<EOF
@@ -193,6 +193,6 @@ resource "aws_flow_log" "flow_log" {
   traffic_type        = "ALL"
   vpc_id              = aws_vpc.main.id
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}-vpc-flow-log"
+    Name = "${var.prepend-name}vpc-flow-log"
   })
 }

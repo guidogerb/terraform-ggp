@@ -13,6 +13,16 @@ module "vpc" {
   default-azs    = var.default-azs
 }
 
+/*module "cognito" {
+  source = "./modules/congito"
+  vpc_id = module.vpc.vpc_id
+
+  prepend-name   = var.prepend-name
+  default-region = var.default-region
+  common_tags    = var.common_tags
+  default-azs    = var.default-azs
+}
+*/
 /*
 
 

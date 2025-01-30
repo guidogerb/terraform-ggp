@@ -12,16 +12,16 @@ variable "common_tags" {
   }
 }
 
-variable "prepend-name" {
-  description = "Prepend name for infrastructure"
-  type        = string
-  default     = "GGP-"
-}
-
 variable "default-region" {
   description = "Default region"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
+}
+
+variable "prepend-name" {
+  description = "Prepend name for infrastructure"
+  type        = string
+  default     = "GGP-us-east-2-"
 }
 
 variable "default-azs" {
