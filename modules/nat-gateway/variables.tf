@@ -1,7 +1,7 @@
-# terraform-ggp/modules/cognito/variables.tf
+# terraform-ggp/modules/nat-gateway/variables.tf
 variable "vpc_id" {
   description = "VPC Id"
-  type  =string
+  type  = string
 }
 
 variable "defaults" {
@@ -20,7 +20,7 @@ locals {
   default-azs    = var.defaults.default-azs
   date-time = var.defaults.date-time
   local_tags = {
-    Module = "cognito"
+    Module = "nat-gateway"
   }
   tags = merge(local.common_tags, local.local_tags)
   azs = [for az in local.default-azs : format("%s%s", local.default-region, az)]
@@ -29,5 +29,20 @@ locals {
 variable "prepend-name" {
   description = "String to prepend to resource names and tags in module"
   type = string
-  default = "cognito-"
+  default = "nat-gateway-"
+}
+
+variable "public-subnet-id" {
+  description = "Public subnet id to associate nat gateway"
+  type = string
+}
+
+variable "private-subnet-id" {
+  description = "Private subnet id"
+  type = string
+}
+
+variable "my-ip" {
+  description = "My local machine ip"
+  type = string
 }

@@ -1,4 +1,9 @@
 # terraform-ggp/variables.tf
+variable "default-region" {
+  description = "Default region"
+  type        = string
+  default     = "us-east-2"
+}
 
 variable "common_tags" {
   description = "Common tags to be attached to all resources"
@@ -12,22 +17,34 @@ variable "common_tags" {
   }
 }
 
-variable "default-region" {
-  description = "Default region"
-  type        = string
-  default     = "us-east-2"
-}
-
-variable "prepend-name" {
-  description = "Prepend name for infrastructure"
-  type        = string
-  default     = "GGP-us-east-2-"
-}
-
 variable "default-azs" {
-  description = "The Availability Zones"
+  description = "The Availability Zones to use"
   type        = list(string)
   default     = ["a", "b", "c"]
+}
+
+variable "private_key_path" {
+  description = "Local private key"
+  type        = string
+  default     = "~/.ssh/ggp-ec2-key"
+}
+
+variable "key-pair" {
+  description = "Key pair name"
+  type        = string
+  default     = "ggp-ec2-key"
+}
+
+variable "instance-type" {
+  description = "The AWS Instance type i.e. p5.48xlarge"
+  default     = "p5.48xlarge"
+  type        = string
+}
+
+variable "ec2-ami" {
+  description = "The AWS image AMI to provision i.e. ami-0143a67bb6268b86e"
+  default     = "ami-0143a67bb6268b86e"
+  type        = string
 }
 
 variable "plans" {

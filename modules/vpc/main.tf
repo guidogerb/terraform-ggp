@@ -84,11 +84,12 @@ resource "aws_security_group" "allow_ssh_private_subnets" {
 
   vpc_id = aws_vpc.main.id
 
+  # Additional rule to allow SSH from specific IP
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [local.cidr_blocks.private_subnets[count.index]]
+    cidr_blocks = ["${var.my-ip}/32"]
   }
 
   tags = merge(local.tags, {
@@ -97,10 +98,10 @@ resource "aws_security_group" "allow_ssh_private_subnets" {
 }
 
 resource "aws_s3_bucket" "s3-bucket-vpc-logs" {
-  bucket = lower("${var.prepend-name}vpc-logs")
+  bucket = lower("${var.prepend-name}s3-bucket-logs")
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}vpc-logs"
+    Name = "${var.prepend-name}s3-bucket-logs"
   })
 }
 
@@ -113,14 +114,14 @@ resource "aws_s3_bucket_policy" "s3_bucket_policy_vpc_logs" {
       {
         "Sid": "AllowPutObject",
         "Effect": "Allow",
-        "Principal": {"Service": "logs.${var.default-region}.amazonaws.com"},
+        "Principal": {"Service": "logs.${local.default-region}.amazonaws.com"},
         "Action": ["s3:PutObject", "s3:GetObject"],
         "Resource": "${aws_s3_bucket.s3-bucket-vpc-logs.arn}/*"
       },
       {
         "Sid": "AllowGetBucketAcl",
         "Effect": "Allow",
-        "Principal": {"Service": "logs.${var.default-region}.amazonaws.com"},
+        "Principal": {"Service": "logs.${local.default-region}.amazonaws.com"},
         "Action": "s3:GetBucketAcl",
         "Resource": "${aws_s3_bucket.s3-bucket-vpc-logs.arn}"
       }
@@ -193,6 +194,6 @@ resource "aws_flow_log" "flow_log" {
   traffic_type        = "ALL"
   vpc_id              = aws_vpc.main.id
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}vpc-flow-log"
+    Name = "${var.prepend-name}flow-log"
   })
 }

@@ -1,8 +1,4 @@
-# terraform-ggp/modules/cognito/variables.tf
-variable "vpc_id" {
-  description = "VPC Id"
-  type  =string
-}
+# terraform-ggp/modules/provision-ec2-s3-buckets/variables.tf
 
 variable "defaults" {
   description = "Default global variables"
@@ -20,7 +16,7 @@ locals {
   default-azs    = var.defaults.default-azs
   date-time = var.defaults.date-time
   local_tags = {
-    Module = "cognito"
+    Module = "provision-ec2"
   }
   tags = merge(local.common_tags, local.local_tags)
   azs = [for az in local.default-azs : format("%s%s", local.default-region, az)]
@@ -29,5 +25,5 @@ locals {
 variable "prepend-name" {
   description = "String to prepend to resource names and tags in module"
   type = string
-  default = "cognito-"
+  default = "provision-ec2-"
 }
