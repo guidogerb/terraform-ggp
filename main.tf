@@ -74,6 +74,28 @@ module "nat-gateway" {
 
 }
 
+module "build-small-deepseek-ec2" {
+  source       = "./modules/build-small-deepseek-ec2"
+  defaults     = local.module_defaults
+  prepend-name = "GGP-${var.default-region}-build-small-deepseek-ec2-"
+
+  ec2_data_bucket_name   = module.provision-ec2-s3-buckets.ec2_data_bucket_name
+  ec2_backup_bucket_name = module.provision-ec2-s3-buckets.ec2_backup_bucket_name
+  subnet_id              = data.aws_subnet.private-subnet-1.id
+
+  instance-type    = "inf2.xlarge"
+  ec2-ami          = var.ec2-ami
+  private_key_path = var.private_key_path
+  key-pair         = var.key-pair
+  start-instance   = true
+
+  ec2-instance-profile-name = module.provision-ec2-s3-buckets.ec2-instance-profile-name
+  deepseek-sg-id            = module.deepseek-roles.deepseek-sg-id
+  gpu-role-name             = module.deepseek-roles.gpu-role-name
+  ssh-port                  = var.ingress-ssh-port
+}
+
+/*
 module "build-deepseek-ec2" {
   source       = "./modules/build-deepseek-ec2"
   defaults     = local.module_defaults
@@ -94,7 +116,7 @@ module "build-deepseek-ec2" {
   gpu-role-name             = module.deepseek-roles.gpu-role-name
   ssh-port                  = var.ingress-ssh-port
 }
-
+*/
 /*
 
 module "provision-deepseek-ec2" {

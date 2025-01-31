@@ -22,6 +22,11 @@ s3fs ggp-us-east-2-provision-ec2-s3-buckets-ec2-data-bucket ~/s3-home -o iam_rol
 
 
 aws service-quotas list-service-quotas --service-code ec2 --region us-east-2
+aws service-quotas list-service-quotas --service-code ec2 --region us-east-2 --query "Quotas[*].{QuotaName:QuotaName, QuotaCode:QuotaCode, Value:Value, Adjustable:Adjustable}" --output table
+aws service-quotas list-service-quotas --service-code ec2 --region us-east-2 --query "Quotas[*].{QuotaName:QuotaName, QuotaCode:QuotaCode, Value:Value, Adjustable:Adjustable}" --output table > quotas.txt
+
+
+
 aws service-quotas get-service-quota --service-code ec2 --quota-code L-1216C47A --region us-east-2
 
 aws service-quotas request-service-quota-increase --service-code ec2 --quota-code L-1216C47A --desired-value 1 --region us-east-2
