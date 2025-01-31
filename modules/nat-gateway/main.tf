@@ -35,26 +35,38 @@ resource "aws_route_table_association" "route-table-association" {
 }
 
 resource "aws_security_group" "nat-gateway-secuirty-group" {
-  name        = "${var.prepend-name}nat-gateway-security-group"
+  name        = "${var.prepend-name}nat-gateway-sg"
   description = "Nat Gateway Security Group"
   vpc_id      = var.vpc_id
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}nat-gateway-security-group"
+    Name = "${var.prepend-name}nat-gateway-sg"
   })
 
 }
 
-# Ingress rule - inbound
+# SSH Ingress rule - inbound
 resource "aws_security_group_rule" "nat_gateway_ingress_ssh" {
   security_group_id = aws_security_group.nat-gateway-secuirty-group.id
 
   type        = "ingress"
-  from_port   = 22
-  to_port     = 22
+  from_port   = var.ingress-ssh-port
+  to_port     = var.ingress-ssh-port
   protocol    = "tcp"
   cidr_blocks = ["${var.my-ip}/32"]
 }
+
+# Inference Ingress rule - inbound
+resource "aws_security_group_rule" "nat_gateway_ingress_inference" {
+  security_group_id = aws_security_group.nat-gateway-secuirty-group.id
+
+  type        = "ingress"
+  from_port   = var.ingress-inference-start-port
+  to_port     = var.ingress-inference-end-port
+  protocol    = "tcp"
+  cidr_blocks = ["${var.my-ip}/32"]
+}
+
 
 # Egress rule - outbound
 resource "aws_security_group_rule" "nat-gateway-egress" {

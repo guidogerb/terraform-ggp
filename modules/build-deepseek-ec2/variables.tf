@@ -92,3 +92,9 @@ variable "most-recent-deep-learning-image-regex" {
   default = ["Deep Learning AMI Neuron*Ubuntu 22*"]
 }
 
+variable "ssh-port" {
+  description = "SSH port to use"
+  type = number
+  default = 22
+}
+

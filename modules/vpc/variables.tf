@@ -32,3 +32,9 @@ variable "my-ip" {
   description = "My machines ip"
   type = string
 }
+
+variable "ingress-ssh-port" {
+  description = "Ingress port for SSH"
+  type = number
+  default = 22
+}

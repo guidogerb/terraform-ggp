@@ -30,3 +30,26 @@ variable "my-ip" {
   description = "Your localhost remote public IP"
   type = string
 }
+
+variable "vpc-id" {
+  description = "VPC Id"
+  type = string
+}
+
+variable "ingress-ssh-port" {
+  description = "Ingress port for SSH"
+  type = number
+  default = 22
+}
+
+variable "ingress-inference-start-port" {
+  description = "Ingress start port for inference"
+  type = number
+  default = 11434
+}
+
+variable "ingress-inference-end-port" {
+  description = "Ingress end port for inference"
+  type = number
+  default = 11439
+}

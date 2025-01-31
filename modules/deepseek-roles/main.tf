@@ -1,19 +1,20 @@
 resource "aws_security_group" "deepseek_sg" {
   name        = "${var.prepend-name}deepseek-sg"
   description = "Allow SSH and inference API traffic"
+  vpc_id = var.vpc-id
 
   # SSH Access
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port   = var.ingress-ssh-port
+    to_port     = var.ingress-ssh-port
     protocol    = "tcp"
     cidr_blocks = ["${var.my-ip}/32"]
   }
 
   # Inference API ports
   ingress {
-    from_port   = 11434
-    to_port     = 11439
+    from_port   = var.ingress-inference-start-port
+    to_port     = var.ingress-inference-end-port
     protocol    = "tcp"
     cidr_blocks = ["${var.my-ip}/32"]
   }
@@ -63,3 +64,4 @@ resource "aws_iam_instance_profile" "iam-instance-profile-gpu-role" {
     Name = "${var.prepend-name}iam-instance-profile-gpu-role"
   })
 }
+

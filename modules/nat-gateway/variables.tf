@@ -46,3 +46,21 @@ variable "my-ip" {
   description = "My local machine ip"
   type = string
 }
+
+variable "ingress-ssh-port" {
+  description = "Ingress port for SSH"
+  type = number
+  default = 22
+}
+
+variable "ingress-inference-start-port" {
+  description = "Ingress start port for inference"
+  type = number
+  default = 11434
+}
+
+variable "ingress-inference-end-port" {
+  description = "Ingress end port for inference"
+  type = number
+  default = 11439
+}

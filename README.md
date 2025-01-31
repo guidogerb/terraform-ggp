@@ -256,3 +256,14 @@ python3 -m vllm.entrypoints.openai.api_server --model /mnt/deepseek/DeepSeek-R1-
 
 python3 -m vllm.entrypoints.openai.api_server --model /mnt/deepseek/deepseek-llm-67b-chat --port 11438 &
 python3 -m vllm.entrypoints.openai.api_server --model /mnt/deepseek/deepseek-llm-7b-chat --port 11439 &
+
+
+    # Test - load models
+    python3 -m vllm.model_loader --model-path ./deepseek-llm-67b-chat --preload
+    python3 -m vllm.model_loader --model-path ./deepseek-llm-7b-chat --preload
+    python3 -m vllm.model_loader --model-path ./DeepSeek-R1-Distill-Llama-70B --preload
+    python3 -m vllm.model_loader --model-path ./DeepSeek-R1-Distill-Qwen-32B --preload
+    python3 -m vllm.model_loader --model-path ./DeepSeek-R1-Distill-Qwen-14B --preload
+
+    sudo systemctl restart neuron-rtd
+    sync; echo 3 | sudo tee /proc/sys/vm/drop_caches

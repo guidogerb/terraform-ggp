@@ -70,8 +70,8 @@ resource "aws_default_security_group" "default-security-group" {
 
   # Additional rule to allow SSH from specific IP
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port   = var.ingress-ssh-port
+    to_port     = var.ingress-ssh-port
     protocol    = "tcp"
     cidr_blocks = ["${var.my-ip}/32"]
   }
@@ -84,7 +84,7 @@ resource "aws_default_security_group" "default-security-group" {
   }
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}default-security-group"
+    Name = "${var.prepend-name}default-sg"
   })
 }
 
@@ -95,26 +95,10 @@ resource "aws_security_group" "allow_ssh_private_subnets" {
 
   # Additional rule to allow SSH from specific IP
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port   = var.ingress-ssh-port
+    to_port     = var.ingress-ssh-port
     protocol    = "tcp"
     cidr_blocks = ["${var.my-ip}/32"]
-  }
-
-  # Additional rule to allow http
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Additional rule to allow http
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -125,7 +109,7 @@ resource "aws_security_group" "allow_ssh_private_subnets" {
   }
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}allow-ssh-private-subnets-${count.index}"
+    Name = "${var.prepend-name}allow-ssh-private-subnets-${count.index}-sg"
   })
 }
 

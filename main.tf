@@ -12,13 +12,15 @@ locals {
     date-time      = formatdate("YYYYMMDDhhmmss", timestamp())
   }
   my-ip = "74.213.199.191"
+
 }
 
 module "vpc" {
-  source       = "./modules/vpc"
-  defaults     = local.module_defaults
-  prepend-name = "GGP-${var.default-region}-vpc-"
-  my-ip        = local.my-ip
+  source           = "./modules/vpc"
+  defaults         = local.module_defaults
+  prepend-name     = "GGP-${var.default-region}-vpc-"
+  my-ip            = local.my-ip
+  ingress-ssh-port = var.ingress-ssh-port
 }
 
 data "aws_subnet" "public-subnet-1" {
@@ -45,25 +47,35 @@ module "provision-ec2-s3-buckets" {
 }
 
 module "deepseek-roles" {
-  source       = "./modules/deepseek-roles"
-  defaults     = local.module_defaults
-  prepend-name = "GGP-${var.default-region}-deepseek-roles-"
-  my-ip        = local.my-ip
+  source                       = "./modules/deepseek-roles"
+  defaults                     = local.module_defaults
+  prepend-name                 = "GGP-${var.default-region}-deepseek-roles-"
+  my-ip                        = local.my-ip
+  vpc-id                       = module.vpc.vpc_id
+  ingress-ssh-port             = var.ingress-ssh-port
+  ingress-inference-start-port = var.ingress-inference-start-port
+  ingress-inference-end-port   = var.ingress-inference-end-port
+
 }
 
 /*** Below are modules that can be deleted to reduce cost **/
 
 module "nat-gateway" {
-  source            = "./modules/nat-gateway"
-  vpc_id            = module.vpc.vpc_id
-  defaults          = local.module_defaults
-  prepend-name      = "GGP-${var.default-region}-nat-gateway-"
-  public-subnet-id  = data.aws_subnet.public-subnet-1.id
-  private-subnet-id = data.aws_subnet.private-subnet-1.id
-  my-ip             = local.my-ip
+  source                       = "./modules/nat-gateway"
+  vpc_id                       = module.vpc.vpc_id
+  defaults                     = local.module_defaults
+  prepend-name                 = "GGP-${var.default-region}-nat-gateway-"
+  public-subnet-id             = data.aws_subnet.public-subnet-1.id
+  private-subnet-id            = data.aws_subnet.private-subnet-1.id
+  my-ip                        = local.my-ip
+  ingress-ssh-port             = var.ingress-ssh-port
+  ingress-inference-start-port = var.ingress-inference-start-port
+  ingress-inference-end-port   = var.ingress-inference-end-port
+
 }
 
-/*module "build-deepseek-ec2" {
+/*
+module "build-deepseek-ec2" {
   source       = "./modules/build-deepseek-ec2"
   defaults     = local.module_defaults
   prepend-name = "GGP-${var.default-region}-build-deepseek-ec2-"
@@ -72,14 +84,18 @@ module "nat-gateway" {
   ec2_backup_bucket_name = module.provision-ec2-s3-buckets.ec2_backup_bucket_name
   subnet_id              = data.aws_subnet.private-subnet-1.id
 
-  instance-type    = "inf2.8xlarge"  // "inf2.8xlarge" "inf2.24xlarge" "inf2.48xlarge"
+  instance-type    = "inf2.8xlarge" // "inf2.8xlarge" "inf2.24xlarge" "inf2.48xlarge"
   ec2-ami          = var.ec2-ami
   private_key_path = var.private_key_path
   key-pair         = var.key-pair
   start-instance   = true
 
   ec2-instance-profile-name = module.provision-ec2-s3-buckets.ec2-instance-profile-name
-}*/
+  deepseek-sg-id            = module.deepseek-roles.deepseek-sg-id
+  gpu-role-name             = module.deepseek-roles.gpu-role-name
+  ssh-port                  = var.ingress-ssh-port
+}
+*/
 
 /*
 
