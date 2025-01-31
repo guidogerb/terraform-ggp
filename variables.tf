@@ -47,6 +47,16 @@ variable "instance-type" {
   type        = string
 }
 
+variable "inf2-instance-types" {
+  description = "Inf2 (Inferentia2) instances"
+  type        = map(string)
+  default = {
+    8  = "inf2.8xlarge"
+    24 = "inf2.24xlarge"
+    48 = "inf2.48xlarge"
+  }
+}
+
 variable "ec2-ami" {
   description = "The AWS image AMI to provision i.e. aws ec2 describe-images --owners amazon --filters \"Name=name,Values=*Neuron*Ubuntu 22*\" --region us-east-2 --query 'Images | sort_by(@, &CreationDate)[-1].[ImageId, Name, CreationDate]' --output table"
   default     = "ami-0d55852c857e221a8"

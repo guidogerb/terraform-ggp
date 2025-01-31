@@ -74,7 +74,6 @@ module "nat-gateway" {
 
 }
 
-/*
 module "build-deepseek-ec2" {
   source       = "./modules/build-deepseek-ec2"
   defaults     = local.module_defaults
@@ -84,7 +83,7 @@ module "build-deepseek-ec2" {
   ec2_backup_bucket_name = module.provision-ec2-s3-buckets.ec2_backup_bucket_name
   subnet_id              = data.aws_subnet.private-subnet-1.id
 
-  instance-type    = "inf2.8xlarge" // "inf2.8xlarge" "inf2.24xlarge" "inf2.48xlarge"
+  instance-type    = "inf2.48xlarge"
   ec2-ami          = var.ec2-ami
   private_key_path = var.private_key_path
   key-pair         = var.key-pair
@@ -95,7 +94,6 @@ module "build-deepseek-ec2" {
   gpu-role-name             = module.deepseek-roles.gpu-role-name
   ssh-port                  = var.ingress-ssh-port
 }
-*/
 
 /*
 

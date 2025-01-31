@@ -25,6 +25,8 @@ aws service-quotas list-service-quotas --service-code ec2 --region us-east-2
 aws service-quotas get-service-quota --service-code ec2 --quota-code L-1216C47A --region us-east-2
 
 aws service-quotas request-service-quota-increase --service-code ec2 --quota-code L-1216C47A --desired-value 1 --region us-east-2
+aws service-quotas request-service-quota-increase --service-code ec2 --quota-code L-1216C47A --desired-value 8 --region us-east-2
+
 
 Here’s a **Terraform configuration** to build an **AWS AMI on `inf2.xlarge`**, optimized for **DeepSeek-R1:671B (404GB model)**, and later deploy it on an **`inf2.48xlarge`** instance.
 

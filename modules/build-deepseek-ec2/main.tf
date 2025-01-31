@@ -16,6 +16,10 @@ resource "aws_instance" "deepseek-complete-builder" {
   instance_type = var.instance-type
   key_name      = var.key-pair
 
+  subnet_id = var.subnet_id
+  # Security Group - Open SSH, HTTP for inference API, and Jupyter
+  vpc_security_group_ids = [var.deepseek-sg-id]
+
   root_block_device {
     volume_size = 400  # Root volume for OS and dependencies
     volume_type = "gp3"
@@ -28,9 +32,6 @@ resource "aws_instance" "deepseek-complete-builder" {
     volume_type           = "gp3"
     delete_on_termination = false
   }
-
-  # Security Group - Open SSH, HTTP for inference API, and Jupyter
-  vpc_security_group_ids = [var.deepseek-sg-id]
 
   iam_instance_profile = var.gpu-role-name
 
@@ -69,6 +70,16 @@ resource "aws_instance" "deepseek-complete-builder" {
     # Install AWS SSM Agent
     sudo snap install amazon-ssm-agent --classic
 
+    echo "Installing S3FS and configuring IAM role-based access..." >> /tmp/setup.log
+
+    ########################
+    # Install S3FS
+    sudo apt install -y s3fs
+
+    ########################
+    # Create a mount point for S3
+    sudo mkdir -p /mnt/s3
+
     ########################
     # create models folder and download
     mkdir -p /mnt/models
@@ -93,6 +104,9 @@ resource "aws_instance" "deepseek-complete-builder" {
     [Service]
     ExecStart=/usr/local/bin/ollama serve
     Restart=always
+    RestartSec=5
+    StartLimitIntervalSec=500
+    StartLimitBurst=5
     User=ubuntu
     WorkingDirectory=/home/ubuntu
 
@@ -109,6 +123,9 @@ resource "aws_instance" "deepseek-complete-builder" {
     [Service]
     ExecStart=/usr/local/bin/ollama run deepseek-r1:671b > /dev/null 2>&1
     Restart=always
+    RestartSec=5
+    StartLimitIntervalSec=500
+    StartLimitBurst=5
     User=ubuntu
     WorkingDirectory=/home/ubuntu
 
@@ -134,6 +151,9 @@ resource "aws_instance" "deepseek-complete-builder" {
         [Service]
         ExecStart=/usr/bin/python3 -m vllm.entrypoints.openai.api_server --model /mnt/models/$model_name --port $port
         Restart=always
+        RestartSec=5
+        StartLimitIntervalSec=500
+        StartLimitBurst=5
         User=ubuntu
         WorkingDirectory=/home/ubuntu
 
@@ -142,11 +162,33 @@ resource "aws_instance" "deepseek-complete-builder" {
         EOT
     done
 
+    ########################
+    # Create systemd service for S3 mount
+    sudo tee /etc/systemd/system/mount-s3.service > /dev/null <<EOT
+    [Unit]
+    Description=Mount S3 Bucket using s3fs
+    After=network-online.target
+    Wants=network-online.target
+
+    [Service]
+    Type=simple
+    ExecStart=/usr/bin/s3fs ${var.ec2_data_bucket_name} /mnt/s3 -o iam_role=auto,allow_other,use_cache=/tmp
+    ExecStop=/bin/fusermount -u /mnt/s3
+    Restart=always
+    RestartSec=5
+    StartLimitIntervalSec=500
+    StartLimitBurst=5
+    User=ubuntu
+
+    [Install]
+    WantedBy=multi-user.target
+    EOT
+
     # Reload systemd to recognize new services
     sudo systemctl daemon-reload
 
     # Enable Services
-    sudo systemctl enable amazon-ssm-agent ollama ollama-run
+    sudo systemctl enable amazon-ssm-agent ollama ollama-run mount-s3.service
 
     for model in "DeepSeek-R1-Distill-Llama-70B" \
                  "DeepSeek-R1-Distill-Qwen-32B" \

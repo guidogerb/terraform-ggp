@@ -1,8 +1,4 @@
 # terraform-ggp/modules/nat-gateway/variables.tf
-variable "vpc_id" {
-  description = "VPC Id"
-  type  = string
-}
 
 variable "defaults" {
   description = "Default global variables"
@@ -30,6 +26,11 @@ variable "prepend-name" {
   description = "String to prepend to resource names and tags in module"
   type = string
   default = "nat-gateway-"
+}
+
+variable "vpc_id" {
+  description = "VPC Id"
+  type  = string
 }
 
 variable "public-subnet-id" {
