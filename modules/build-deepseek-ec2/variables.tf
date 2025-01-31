@@ -46,6 +46,7 @@ variable "ec2_backup_bucket_name" {
 variable "ec2-ami" {
   description = "The Amazon Machine Image (AMI) ID of the instance type you want to launch."
   type = string
+  default = "ami-0d55852c857e221a8"
 }
 
 variable "private_key_path" {
@@ -56,6 +57,7 @@ variable "private_key_path" {
 variable "instance-type" {
   description = "The EC2 instance type i.e p5.48xlarge"
   type = string
+  default = "inf2.48xlarge"
 }
 
 variable "subnet_id" {
@@ -74,4 +76,19 @@ variable "start-instance" {
   default = false
 }
 
+variable "deepseek-sg-id" {
+  description = "Deepseek Security Group"
+  type = string
+}
+
+variable "gpu-role-name" {
+  description = "Deepseek GPU IAM Role Name"
+  type = string
+}
+
+variable "most-recent-deep-learning-image-regex" {
+  description = "A list of regular expression values to get latest Deep Learning AIM"
+  type = list(string)
+  default = ["Deep Learning AMI Neuron*Ubuntu 22*"]
+}
 

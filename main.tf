@@ -37,15 +37,22 @@ data "aws_subnet" "private-subnet-1" {
   }
 }
 
-/*module "provision-ec2-s3-buckets" {
+module "provision-ec2-s3-buckets" {
   source       = "./modules/provision-ec2-s3-buckets"
   defaults     = local.module_defaults
   prepend-name = "GGP-${var.default-region}-provision-ec2-s3-buckets-"
-  account-id        = var.account-id
-}*/
+  account-id   = var.account-id
+}
+
+module "deepseek-roles" {
+  source       = "./modules/deepseek-roles"
+  defaults     = local.module_defaults
+  prepend-name = "GGP-${var.default-region}-deepseek-roles-"
+  my-ip        = local.my-ip
+}
 
 /*** Below are modules that can be deleted to reduce cost **/
-/*
+
 module "nat-gateway" {
   source            = "./modules/nat-gateway"
   vpc_id            = module.vpc.vpc_id
@@ -56,7 +63,7 @@ module "nat-gateway" {
   my-ip             = local.my-ip
 }
 
-module "build-deepseek-ec2" {
+/*module "build-deepseek-ec2" {
   source       = "./modules/build-deepseek-ec2"
   defaults     = local.module_defaults
   prepend-name = "GGP-${var.default-region}-build-deepseek-ec2-"
@@ -65,19 +72,19 @@ module "build-deepseek-ec2" {
   ec2_backup_bucket_name = module.provision-ec2-s3-buckets.ec2_backup_bucket_name
   subnet_id              = data.aws_subnet.private-subnet-1.id
 
-  instance-type    = "c6i.32xlarge"  // "x1e.8xlarge" "g6.12xlarge" "g5.24xlarge" "p5.48xlarge" "p4de.24xlarge" "m6id.24xlarge"
+  instance-type    = "inf2.8xlarge"  // "inf2.8xlarge" "inf2.24xlarge" "inf2.48xlarge"
   ec2-ami          = var.ec2-ami
   private_key_path = var.private_key_path
   key-pair         = var.key-pair
   start-instance   = true
 
   ec2-instance-profile-name = module.provision-ec2-s3-buckets.ec2-instance-profile-name
-}
-*/
+}*/
+
 /*
 
-module "provision-ec2" {
-  source       = "./modules/provision-ec2"
+module "provision-deepseek-ec2" {
+  source       = "./modules/provision-deepseek-ec2"
   defaults     = local.module_defaults
   prepend-name = "GGP-${var.default-region}-provision-ec2-"
 

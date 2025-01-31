@@ -19,8 +19,8 @@ variable "common_tags" {
 
 variable "account-id" {
   description = "AWS Account id"
-  type = string
-  default = "471112830678"
+  type        = string
+  default     = "471112830678"
 }
 
 variable "default-azs" {
@@ -43,13 +43,13 @@ variable "key-pair" {
 
 variable "instance-type" {
   description = "The AWS Instance type i.e. p5.48xlarge"
-  default     = "p5.48xlarge"
+  default     = "inf2.48xlarge"
   type        = string
 }
 
 variable "ec2-ami" {
-  description = "The AWS image AMI to provision i.e. ami-0143a67bb6268b86e"
-  default     = "ami-0143a67bb6268b86e"
+  description = "The AWS image AMI to provision i.e. aws ec2 describe-images --owners amazon --filters \"Name=name,Values=*Neuron*Ubuntu 22*\" --region us-east-2 --query 'Images | sort_by(@, &CreationDate)[-1].[ImageId, Name, CreationDate]' --output table"
+  default     = "ami-0d55852c857e221a8"
   type        = string
 }
 

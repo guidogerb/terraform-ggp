@@ -1,58 +1,105 @@
-# 🎯 EC2 Instance
-resource "aws_instance" "aws-instance" {
-  ami                    = var.ec2-ami
-  instance_type          = var.instance-type
-  key_name               = var.key-pair
-  subnet_id              = var.subnet_id
-  monitoring             = false
-  hibernation            = false
-  disable_api_termination = false
-  ebs_optimized          = true
-  iam_instance_profile   = var.ec2-instance-profile-name
-  count = var.start-instance? 1:0
+### FIND LATEST AWS NEURON AMI FOR INFERENCE
+data "aws_ami" "deep_learning_neuron" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = var.most-recent-deep-learning-image-regex
+  }
+}
+
+### build instance (inf2.48xlarge or greater needed)
+resource "aws_instance" "deepseek-complete-builder" {
+  # use the provided AMI if present, else find the latest
+  ami           = coalesce(var.ec2-ami, data.aws_ami.deep_learning_neuron.id)
+  instance_type = var.instance-type
+  key_name      = var.key-pair
 
   root_block_device {
-    volume_size           = 256
+    volume_size = 100  # Root volume for OS and dependencies
+    volume_type = "gp3"
+  }
+
+  # Model storage EBS volume (2TB for DeepSeek-R1:671B + vLLM caching)
+  ebs_block_device {
+    device_name           = "/dev/sdf"
+    volume_size           = 2000  # 2TB storage
     volume_type           = "gp3"
     delete_on_termination = false
   }
 
-  user_data_replace_on_change = true
+  # Security Group - Open SSH, HTTP for inference API, and Jupyter
+  vpc_security_group_ids = [var.deepseek-sg-id]
+
+  iam_instance_profile = var.gpu-role-name
 
   user_data = <<-EOF
     #!/bin/bash
-    sudo dnf update -y
-    sudo dnf groupinstall "Development Tools" -y
-    sudo dnf install fuse fuse-devel libcurl-devel libxml2-devel openssl-devel -y
-    sudo dnf install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
-    sudo systemctl enable amazon-ssm-agent
-    sudo systemctl start amazon-ssm-agent
+    set -e
 
-    # download and compile, install and mount s3 with s3fs-fuse
-    mkdir ~/sources
-    cd ~/sources
-    git clone https://github.com/s3fs-fuse/s3fs-fuse.git
-    cd s3fs-fuse
-    ./autogen.sh
-    ./configure --prefix=/usr --with-openssl
-    make
-    sudo make install
-    echo "user_allow_other" | sudo tee -a /etc/fuse.conf
-    sudo chmod 644 /etc/fuse.conf
+    echo "#############################################################" >> /tmp/setup.log
+    echo "[$(date)] Starting DeepSeek models setup..." >> /tmp/setup.log
 
-    # Create a directory for mounting
-    mkdir ~/s3-home
+    # Update system packages
+    sudo apt update && sudo apt upgrade -y
 
-    # Mount the S3 bucket using the IAM role
-    s3fs ${var.ec2_data_bucket_name} ~/s3-home -o iam_role=auto -o allow_other -o umask=0022
+    # Install AWS Neuron SDK
+    sudo apt install -y aws-neuronx-tools aws-neuronx-dkms aws-neuronx-runtime-lib neuronx-cc neuronx-runtime
 
-    # Auto-mount on reboot
-    echo "s3fs#${var.ec2_data_bucket_name} ~/s3-home fuse _netdev,allow_other,use_path_request_style,iam_role=auto,umask=0022 0 0" | sudo tee -a /etc/fstab
+    # Install Python & Pip dependencies
+    sudo apt install -y python3-pip
+    python3 -m pip install --upgrade pip
+    python3 -m pip install torch torchvision torchaudio vllm transformers
 
+    # Install and run Ollama Model deepseek-r1:671b
+    mkdir -p /mnt/ollama
+    sudo chown ubuntu:ubuntu /mnt/ollama
+    cd /mnt/ollama
+    curl -fsSL https://ollama.com/install.sh | sh
+    ollama pull deepseek-r1:671b
+    ollama serve
+    ollama run deepseek-r1:671b
+
+    # Install Huggingface DeepSeek models
+    mkdir -p /mnt/deepseek
+    sudo chown ubuntu:ubuntu /mnt/deepseek
+    cd /mnt/deepseek
+
+    git clone https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat
+    git clone https://huggingface.co/deepseek-ai/deepseek-llm-7b-chat
+    git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B
+    git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+    git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B
+
+    # Test - load models
+    python3 -m vllm.model_loader --model-path ./deepseek-llm-67b-chat --preload
+    python3 -m vllm.model_loader --model-path ./deepseek-llm-7b-chat --preload
+    python3 -m vllm.model_loader --model-path ./DeepSeek-R1-Distill-Llama-70B --preload
+    python3 -m vllm.model_loader --model-path ./DeepSeek-R1-Distill-Qwen-32B --preload
+    python3 -m vllm.model_loader --model-path ./DeepSeek-R1-Distill-Qwen-14B --preload
+
+    sudo systemctl restart neuron-rtd
+    sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
+
+    # Setup complete
+    echo "[$(date)] DeepSeek models setup complete." >> /tmp/setup.log
+    echo "#############################################################" >> /tmp/setup.log
   EOF
 
   tags = merge(local.tags, {
-    Name = "${var.prepend-name}aws-instance"
+    Name = "${var.prepend-name}DeepSeek-Builder-Inf2"
   })
+}
 
+### CREATE AMI AFTER SETUP
+resource "aws_ami" "deepseek_ami" {
+  name                = "${var.prepend-name}DeepSeek-AMI"
+  instance_id         = aws_instance.deepseek-complete-builder.id
+  description         = "Preconfigured AMI for comprehensive DeepSeek model inference on Inf2"
+  virtualization_type = "hvm"
+
+  tags = merge(local.tags, {
+    Name = "${var.prepend-name}DeepSeek-AMI"
+  })
 }
