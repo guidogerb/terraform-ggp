@@ -17,6 +17,12 @@ variable "common_tags" {
   }
 }
 
+variable "account-id" {
+  description = "AWS Account id"
+  type = string
+  default = "471112830678"
+}
+
 variable "default-azs" {
   description = "The Availability Zones to use"
   type        = list(string)

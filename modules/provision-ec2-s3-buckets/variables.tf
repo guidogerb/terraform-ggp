@@ -27,3 +27,8 @@ variable "prepend-name" {
   type = string
   default = "provision-ec2-"
 }
+
+variable "account-id" {
+  description = "AWS Account id"
+  type = string
+}

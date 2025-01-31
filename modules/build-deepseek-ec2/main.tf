@@ -1,86 +1,18 @@
-# 🎯 IAM Role for S3 Access and EC2 Operations
-resource "aws_iam_role" "ec2-backup-role" {
-  name = "${var.prepend-name}ec2-backup-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-
-  tags = merge(local.tags, {
-    Name = "${var.prepend-name}ec2-backup-role"
-  })
-
-}
-
-# 🎯 IAM Policy for S3, EC2 Snapshot and Backup
-resource "aws_iam_policy" "ec2-backup-policy" {
-  name        = "${var.prepend-name}ec2-backup-policy"
-  description = "Allows EC2 to back up to S3 and create snapshots"
-  policy      = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["s3:PutObject", "s3:GetObject", "s3:ListBucket", "s3:DeleteObject"]
-        Resource = ["arn:aws:s3:::${var.ec2_backup_bucket_name}", "arn:aws:s3:::${var.ec2_backup_bucket_name}/*"]
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["ec2:CreateSnapshot", "ec2:DescribeSnapshots", "ec2:DeleteSnapshot"]
-        Resource = "*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["ec2:CreateImage", "ec2:DescribeImages", "ec2:DeregisterImage"]
-        Resource = "*"
-      }
-    ]
-  })
-
-  tags = merge(local.tags, {
-    Name = "${var.prepend-name}ec2-backup-policy"
-  })
-
-}
-
-resource "aws_iam_role_policy_attachment" "attach_backup_policy" {
-  role       = aws_iam_role.ec2-backup-role.name
-  policy_arn = aws_iam_policy.ec2-backup-policy.arn
-}
-
-# 🎯 IAM Instance Profile
-resource "aws_iam_instance_profile" "ec2-instance-profile" {
-  name = "${var.prepend-name}ec2-instance-profile"
-  role = aws_iam_role.ec2-backup-role.name
-
-  tags = merge(local.tags, {
-    Name = "${var.prepend-name}ec2-instance-profile"
-  })
-
-}
-
-# 🎯 EC2 Instance with Hibernate Enabled
+# 🎯 EC2 Instance
 resource "aws_instance" "aws-instance" {
   ami                    = var.ec2-ami
   instance_type          = var.instance-type
   key_name               = var.key-pair
-  subnet_id = var.subnet_id
+  subnet_id              = var.subnet_id
   monitoring             = false
-  hibernation            = true
+  hibernation            = false
   disable_api_termination = false
   ebs_optimized          = true
-  iam_instance_profile   = aws_iam_instance_profile.ec2-instance-profile.name
+  iam_instance_profile   = var.ec2-instance-profile-name
   count = var.start-instance? 1:0
 
   root_block_device {
-    volume_size           = 500
+    volume_size           = 256
     volume_type           = "gp3"
     delete_on_termination = false
   }
@@ -89,17 +21,34 @@ resource "aws_instance" "aws-instance" {
 
   user_data = <<-EOF
     #!/bin/bash
-    apt-get update -y
-    apt-get install -y s3fs
+    sudo dnf update -y
+    sudo dnf groupinstall "Development Tools" -y
+    sudo dnf install fuse fuse-devel libcurl-devel libxml2-devel openssl-devel -y
+    sudo dnf install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    sudo systemctl enable amazon-ssm-agent
+    sudo systemctl start amazon-ssm-agent
+
+    # download and compile, install and mount s3 with s3fs-fuse
+    mkdir ~/sources
+    cd ~/sources
+    git clone https://github.com/s3fs-fuse/s3fs-fuse.git
+    cd s3fs-fuse
+    ./autogen.sh
+    ./configure --prefix=/usr --with-openssl
+    make
+    sudo make install
+    echo "user_allow_other" | sudo tee -a /etc/fuse.conf
+    sudo chmod 644 /etc/fuse.conf
 
     # Create a directory for mounting
-    mkdir -p /mnt/s3
+    mkdir ~/s3-home
 
     # Mount the S3 bucket using the IAM role
-    s3fs ${var.ec2_data_bucket_name} /mnt/s3 -o iam_role=${aws_iam_role.ec2-backup-role.name} -o allow_other
+    s3fs ${var.ec2_data_bucket_name} ~/s3-home -o iam_role=auto -o allow_other -o umask=0022
 
     # Auto-mount on reboot
-    echo "s3fs#${var.ec2_data_bucket_name} /mnt/s3 fuse _netdev,allow_other 0 0" >> /etc/fstab
+    echo "s3fs#${var.ec2_data_bucket_name} ~/s3-home fuse _netdev,allow_other,use_path_request_style,iam_role=auto,umask=0022 0 0" | sudo tee -a /etc/fstab
+
   EOF
 
   tags = merge(local.tags, {

@@ -1,0 +1,62 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowEC2MountpointAccess",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::ACCOUNT-ID:role/EC2-ROLE-NAME"
+      },
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME"
+    },
+    {
+      "Sid": "AllowEC2MountpointObjectOperations",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::ACCOUNT-ID:role/EC2-ROLE-NAME"
+      },
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
+    }
+  ]
+}
+
+resource "aws_s3_bucket_policy" "s3-bucket-policy-ec2-mount-s3" {
+bucket = aws_s3_bucket.ec2-data-bucket.id
+ policy = jsonencode({
+    "Version": "2012-10-17",
+    "Id": "${var.prepend-name}s3-bucket-policy-ec2-mount-s3",
+    "Statement": [{
+      "Sid": "AllowEC2MountpointAccess",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::ACCOUNT-ID:role/EC2-ROLE-NAME"
+      },
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME"
+    },
+      {
+        "Sid": "AllowEC2MountpointObjectOperations",
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": "arn:aws:iam::ACCOUNT-ID:role/EC2-ROLE-NAME"
+        },
+        "Action": [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
+      }
+    ]
+  })
+}

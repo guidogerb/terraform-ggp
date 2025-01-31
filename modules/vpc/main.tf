@@ -9,6 +9,7 @@ locals {
 
 resource "aws_vpc" "main" {
   cidr_block  = local.cidr_blocks.vpc
+  enable_dns_hostnames = true
 
   tags = merge(local.tags, {
     Name = "${var.prepend-name}main-vpc"
@@ -67,6 +68,14 @@ resource "aws_route_table" "route-table-public" {
 resource "aws_default_security_group" "default-security-group" {
   vpc_id = aws_vpc.main.id
 
+  # Additional rule to allow SSH from specific IP
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["${var.my-ip}/32"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -90,6 +99,29 @@ resource "aws_security_group" "allow_ssh_private_subnets" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["${var.my-ip}/32"]
+  }
+
+  # Additional rule to allow http
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Additional rule to allow http
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = merge(local.tags, {

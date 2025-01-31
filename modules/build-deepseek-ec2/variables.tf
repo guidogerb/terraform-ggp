@@ -1,4 +1,4 @@
-# terraform-ggp/modules/provision-ec2/variables.tf
+# terraform-ggp/modules/build-deepseek-ec2/variables.tf
 
 variable "defaults" {
   description = "Default global variables"
@@ -16,7 +16,7 @@ locals {
   default-azs    = var.defaults.default-azs
   date-time = var.defaults.date-time
   local_tags = {
-    Module = "provision-ec2"
+    Module = "build-deepseek-ec2"
   }
   tags = merge(local.common_tags, local.local_tags)
   azs = [for az in local.default-azs : format("%s%s", local.default-region, az)]
@@ -25,7 +25,12 @@ locals {
 variable "prepend-name" {
   description = "String to prepend to resource names and tags in module"
   type = string
-  default = "provision-ec2-"
+  default = "build-deepseek-ec2-"
+}
+
+variable "ec2-instance-profile-name" {
+  description = "The EC2 instance profile that connects to S3"
+  type = string
 }
 
 variable "ec2_data_bucket_name" {
