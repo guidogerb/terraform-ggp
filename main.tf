@@ -59,7 +59,7 @@ module "deepseek-roles" {
 }
 
 /*** Below are modules that can be deleted to reduce cost **/
-
+/*
 module "nat-gateway" {
   source                       = "./modules/nat-gateway"
   vpc_id                       = module.vpc.vpc_id
@@ -93,7 +93,7 @@ module "build-small-deepseek-ec2" {
   deepseek-sg-id            = module.deepseek-roles.deepseek-sg-id
   gpu-role-name             = module.deepseek-roles.gpu-role-name
   ssh-port                  = var.ingress-ssh-port
-}
+}*/
 
 /*
 module "build-deepseek-ec2" {

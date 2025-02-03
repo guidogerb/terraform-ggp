@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  deepseek:
+    build:
+      context: .
+    image: deepseek-image:latest
+    container_name: deepseek-container
+    ports:
+      - "2222:22"
+    volumes:
+      - "J:\Home\Projects\Development\Sources:/home/ggerber/sources"
+    environment:
+      - OLLAMA_MODELS=/home/ggerber/sources/ai/ai-models/Ollama
+    # (Other settings, like ports or restart policy, can be added as needed)

@@ -31,3 +31,5 @@ override.tf.json
 /.terraform.lock.hcl
 /plan*
 /quotas.txt
+
+ggp-ec2-key.pub

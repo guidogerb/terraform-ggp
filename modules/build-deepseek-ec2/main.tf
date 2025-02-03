@@ -39,15 +39,40 @@ resource "aws_instance" "deepseek-complete-builder" {
     #!/bin/bash
     set -e
 
+    cat << 'EOF' >> ~/.bashrc
+
+export PATH="/usr/bin:/bin:$PATH"
+EOF
+
+    source .bashrc
+
     echo "#############################################################" >> /tmp/setup.log
     echo "[$(date)] Starting DeepSeek models setup..." >> /tmp/setup.log
 
     # Update system packages
     sudo apt update && sudo apt upgrade -y
+    sudo apt dist-upgrade -y
+    sudo apt install --only-upgrade linux-aws linux-headers-aws linux-image-aws
+    do-release-upgrade
+    # Additional ssh port 1022 started in case of failure
+    # Some third party entries in your sources.list were disabled. You can
+    # re-enable them after the upgrade with the 'software-properties' tool
+    # or your package manager.
+
 
     ########################
     # Install AWS Neuron SDK
-    sudo apt install -y aws-neuronx-tools aws-neuronx-dkms aws-neuronx-runtime-lib neuronx-cc neuronx-runtime
+    . /etc/os-release
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL "https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB" | sudo gpg --dearmor -o /etc/apt/keyrings/neuron.gpg
+    sudo tee /etc/apt/sources.list.d/neuron.list > /dev/null <<EOF deb [arch=amd64 signed-by=/etc/apt/keyrings/neuron.gpg] https://apt.repos.neuron.amazonaws.com jammy main EOF
+
+    wget -qO - "https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB" | sudo apt-key add -
+    sudo apt update -y
+    sudo apt install aws-neuronx-dkms -y
+    sudo apt install aws-neuronx-runtime-lib -y
+    sudo apt install -y aws-neuronx-tools aws-neuronx-dkms aws-neuronx-runtime-lib
+    sudo apt update -y
 
     # Verify Neuron SDK Installation
     if dpkg -l | grep -q aws-neuronx-runtime-lib; then
@@ -58,9 +83,18 @@ resource "aws_instance" "deepseek-complete-builder" {
     fi
 
     # Install Python & Pip dependencies
-    sudo apt install -y python3-pip
+    sudo apt update
+    sudo apt install -y \
+    make build-essential libssl-dev zlib1g-dev \
+    libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+    libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+
+    mkdir sources
+    cd sources
+    wget https://repo.anaconda.com/archive/Anaconda3-2024.10-1-Linux-x86_64.sh
+    bash Anaconda3-2024.10-1-Linux-x86_64.sh
     python3 -m pip install --upgrade pip
-    python3 -m pip install torch torchvision torchaudio vllm transformers
+    python3 -m pip install torch torchvision torchaudio vllm[neuron] transformers
 
     # Install Ollama
     curl -fsSL https://ollama.com/install.sh | sh
@@ -76,23 +110,29 @@ resource "aws_instance" "deepseek-complete-builder" {
     # Install S3FS
     sudo apt install -y s3fs
 
-    ########################
-    # Create a mount point for S3
-    sudo mkdir -p /mnt/s3
-
-    ########################
-    # create models folder and download
-    mkdir -p /mnt/models
-    sudo chown ubuntu:ubuntu /mnt/models
+    cd ~
+    mkdir sources
+    cd sources
+    mkdir models
+    mkdir pythons
+    mkdir s3
     cd /mnt/models
 
+    df -h # display file system available storage
+
     ollama pull deepseek-r1:671b
+    ollama run <model_name> --prompt "hello world"
 
     git clone https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat
     git clone https://huggingface.co/deepseek-ai/deepseek-llm-7b-chat
     git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B
     git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
     git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B
+
+    du -h --max-depth=100 . | sort -h
+    du -h --max-depth=100 /usr/share/ollama/.ollama/models | sort -h
+
+
 
     ########################
     # 🔹 Create Systemd Service for Ollama
